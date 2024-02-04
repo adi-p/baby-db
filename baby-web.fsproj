@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>baby_web</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="FileStore.fs" />
+    <Compile Include="MemStore.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+</Project>
