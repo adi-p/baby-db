@@ -59,7 +59,7 @@ module FileStore
     // TODO: this should find the current file and create the dataMap and set the writePosition
 
   
-  let set (fileStore: FileStore) (key: string) (value : string) =
+  let set (key: string) (value : string) (fileStore: FileStore) =
     // open file, encode KV pair, write to file, close file, update dataMap, update writePosition
     let file = File.OpenWrite fileStore.fileName
     let (bytesLength, encodedBytes) = encodeKV 0 key value
@@ -75,7 +75,7 @@ module FileStore
 
 
 
-  let get (fileStore: FileStore) (key: string) =
+  let get (key: string) (fileStore: FileStore) =
     // Find key in dataMap, open file, fetch data, close file, decode data, return
     match Map.tryFind key fileStore.dataMap with
     | None -> None
@@ -85,11 +85,10 @@ module FileStore
       let buffer = dataLength |> Array.zeroCreate<byte>
       file.ReadExactly buffer
       file.Close ()
-      // printfn "Encoded Bytes %A" (buffer |> System.Text.Encoding.ASCII.GetString)
       let (_, _, value) = buffer |> decodeKV
       Some value 
     
 
-  let delete (fileStore: FileStore) (key: string) = ()
-    // { dataMap = Map.remove key fileStore.dataMap}
-    // TODO: idea -> remove from dataMap and add tombstone?
+  let delete (key: string) (fileStore: FileStore) = ()
+    // { fileStore with dataMap = Map.remove key fileStore.dataMap}
+    // TODO: idea -> remove from dataMap and add tombstone? -> would need this for FileStore.Load function

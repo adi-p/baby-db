@@ -7,11 +7,11 @@ module MemStore
     let empty = 
         { dataMap = Map.empty }
     
-    let set (memstore: MemStore) (key: string) (value : string) = 
+    let set (key: string) (value : string) (memstore: MemStore) = 
         { dataMap = Map.add key value memstore.dataMap }
 
-    let get (memstore: MemStore) (key: string) = 
+    let get (key: string) (memstore: MemStore) = 
         Map.tryFind key memstore.dataMap
 
-    let delete (memstore: MemStore) (key: string) =
+    let delete (key: string) (memstore: MemStore) =
         { dataMap = Map.remove key memstore.dataMap}
