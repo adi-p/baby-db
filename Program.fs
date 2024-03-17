@@ -1,8 +1,5 @@
 ﻿open System
 
-// This work is based on -> https://github.com/avinassh/py-caskdb/
-// py-caskdb is in turn based on 'bitcask' -> https://riak.com/assets/bitcask-intro.pdf
-
 let testMemStore store =
     printfn "Testing MemStore"
     let data = [ ("a", "a"); ("b", "b"); ("c", "c"); ("d", "d"); ("e", "e") ]
@@ -79,6 +76,38 @@ let testFileStore store =
         printfn "Not all tests pass"
 
 
+let testFileStoreLoad store =
+    printfn "Testing FileStore"
+
+    let tests =
+        [ ("Should not have 'a'", (fun (fileStore: FileStore.FileStore) -> (fileStore |> FileStore.get "a") = None))
+          ("Should have 'c'", (fun (fileStore: FileStore.FileStore) -> (fileStore |> FileStore.get "c") = (Some "ccc")))
+          ("Should have 'd'", (fun (fileStore: FileStore.FileStore) -> (fileStore |> FileStore.get "d") = (Some "dd")))
+          ("Should not have 'f'", (fun (fileStore: FileStore.FileStore) -> (fileStore |> FileStore.get "f") = None))
+          ("Should still not have 'a'",
+           fun (fileStore: FileStore.FileStore) -> (fileStore |> FileStore.get "a") = None)
+          ("Should replace 'a'",
+           fun (fileStore: FileStore.FileStore) ->
+               (fileStore |> FileStore.set "a" "a-replace" |> FileStore.get "a") = (Some "a-replace"))
+          ("Should remove 'a'",
+           fun (fileStore: FileStore.FileStore) -> (fileStore |> FileStore.delete "a" |> FileStore.get "a") = None) 
+        ]
+
+    let pass =
+        tests
+        |> List.fold
+            (fun resultAcc (testName, testFunc) ->
+                let result = testFunc store
+                printfn "%s - %b" testName result
+                result && resultAcc)
+            true
+
+    if pass then
+        printfn "All tests pass"
+    else
+        printfn "Not all tests pass"
+
+
 // let largeTest n fileStore =
 //     (seq { for i in 1..n do yield  i.ToString() } : string seq)
 //     |> Seq.fold (fun store i -> FileStore.set i i store) fileStore
@@ -89,8 +118,9 @@ let main args =
     testMemStore MemStore.empty
     testFileStore (createFileStore (FileStore.empty "testDB"))
     printfn "-- Load test --" // TODO: write tests for 'load' seperately
-    testFileStore (FileStore.load "testDB")
-    // largeTest 100000(FileStore.empty "testDB")
+    testFileStoreLoad (FileStore.load "testDB")
+
+    0
+    // largeTest 100000 (FileStore.empty "testDB")
     // |> Option.defaultValue "wrong - Null"
     // |> printfn "%s"
-    0
