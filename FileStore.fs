@@ -3,10 +3,6 @@ module FileStore
   open System
   open System.IO
 
-  // TODO::
-  // Do something similar to FileStore but actually write to a file. Base it on https://github.com/avinassh/py-caskdb/
-  // for writing to file look into streamwriter
-
   // FILE FORMATTING
 
   // IDEAS:
@@ -45,32 +41,42 @@ module FileStore
     fileName : string
     dataMap : Map<string, int*int64> // a map from key to (byte length, byte offset in file)
     writePosition: int64
+    readFileStream: FileStream
+    writeFileStream: FileStream
     // TODO consider storing the fileStream here. Maybe one for read and one for write
   }
 
   let empty fileName = 
     // TODO: check if file already exists?
-    let file = File.Create fileName
-    file.Close ()
-    { dataMap = Map.empty; fileName = fileName; writePosition = 0 }
+    { 
+      dataMap = Map.empty; 
+      fileName = fileName; 
+      writePosition = 0;
+      writeFileStream = File.Open (fileName, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
+      readFileStream = File.Open (fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+    }
+
+  let close (fileStore: FileStore) =
+    fileStore.readFileStream.Close ()
+    fileStore.writeFileStream.Close ()
 
   let load fileName =
     // Find the current file and create the dataMap and set the writePosition
     // Read first 8 bytes (keySize and valueSize), read Key, skip value, do until end of file
     // TODO: Consider efficienty, recursion vs. for loop or equivalent, file openings/buffers, etc
     // I wonder if there is a more "functional" way to interact with files/pointers.
-    let rec fillDataMap (file: FileStream) (fileStore: FileStore) =
+    let rec fillDataMap (fileStore: FileStore) =
       let headerBuffer = HEADER_SIZE |> Array.zeroCreate<byte> // can this be moved above function def?
-      file.ReadExactly headerBuffer
+      fileStore.writeFileStream.ReadExactly headerBuffer
       let keySize = headerBuffer[0..3] |> BitConverter.ToInt32
       let valueSize = headerBuffer[4..7] |> BitConverter.ToInt32
       let keyBuffer = keySize |> Array.zeroCreate<byte>
-      file.ReadExactly keyBuffer
+      fileStore.writeFileStream.ReadExactly keyBuffer
       let key = keyBuffer |> bytesToString
       let writeSize = (HEADER_SIZE + keySize + valueSize)
 
       // set file position for the next read
-      file.Seek (valueSize, SeekOrigin.Current) |> ignore
+      fileStore.writeFileStream.Seek (valueSize, SeekOrigin.Current) |> ignore
 
       let newFileStore = { 
         fileStore with 
@@ -78,59 +84,73 @@ module FileStore
             (match valueSize with // remove if there is a tombstone
             | 0 -> fileStore.dataMap |> Map.remove key;
             | _ -> fileStore.dataMap |> Map.add key (writeSize, fileStore.writePosition)); 
-          writePosition = file.Position;
+          writePosition = fileStore.writeFileStream.Position;
         }
       // printfn ("Length: %d  WritePositon: %d  WriteSize: %d") file.Length file.Position writeSize
-      match file.Length <= file.Position + int64(writeSize) with
-      | true -> 
-        file.Close ()
-        newFileStore
-      | false -> fillDataMap file newFileStore
+      match fileStore.writeFileStream.Length <= fileStore.writeFileStream.Position + int64(writeSize) with
+      | true -> newFileStore
+      | false -> fillDataMap newFileStore
 
-    let file = File.OpenRead fileName
-    fillDataMap file { dataMap = Map.empty; fileName = fileName; writePosition = 0 }
+    { 
+      dataMap = Map.empty; 
+      fileName = fileName; 
+      writePosition = 0; 
+      writeFileStream = File.Open (fileName, FileMode.Open, FileAccess.ReadWrite, FileShare.Read); // TODO maybe this needs to be set to the correct position at some point
+      readFileStream = File.Open (fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+    } |> fillDataMap
   
   //TODO: in theory your value could be any type - but only string for now
   let set (key: string) (value : string) (fileStore: FileStore) =
     // open file, encode KV pair, write to file, close file, update dataMap, update writePosition
-    let file = File.OpenWrite fileStore.fileName
     let (bytesLength, encodedBytes) = encodeKV 0 key (value |> System.Text.Encoding.ASCII.GetBytes)
-    // TODO: this seek might be expensive. And since it's just seeking to the same place it was last opened
-    // that might be unnecessary - maybe we can keep a filestream open for writting
-    file.Seek (fileStore.writePosition,  SeekOrigin.Begin) |> ignore
-    file.Write encodedBytes
+    fileStore.writeFileStream.Write encodedBytes
+    // fileStore.writeFileStream.Flush true; // TODO: will this be slow? -> yes
     let fileStore = { 
       fileStore with 
         dataMap = fileStore.dataMap |> Map.add key (bytesLength, fileStore.writePosition); 
-        writePosition = file.Position;
+        writePosition = fileStore.writeFileStream.Position;
       }
-    file.Close ()
     fileStore
+
+  let getValueFromFile (fileStore : FileStore) (dataLength, dataPosition: int64) =
+      fileStore.readFileStream.Seek (dataPosition,  SeekOrigin.Begin) |> ignore
+      let buffer = dataLength |> Array.zeroCreate<byte>
+      fileStore.readFileStream.ReadExactly buffer
+      let (_, _, value) = buffer |> decodeKV
+      value
 
   let get (key: string) (fileStore: FileStore) =
     // Find key in dataMap, open file, fetch data, close file, decode data, return
-    let getValueFromFile (dataLength, dataPosition: int64) =
-      let file = File.OpenRead fileStore.fileName
-      file.Seek (dataPosition,  SeekOrigin.Begin) |> ignore
-      let buffer = dataLength |> Array.zeroCreate<byte>
-      file.ReadExactly buffer
-      file.Close ()
-      let (_, _, value) = buffer |> decodeKV
-      Some value
+    fileStore.writeFileStream.Flush true;
     fileStore.dataMap
     |> Map.tryFind key
-    |> Option.bind getValueFromFile
+    |> Option.map (getValueFromFile fileStore)
     
 
   let delete (key: string) (fileStore: FileStore) =
     // Just a modified copy of set for now - see if we can merge functionality
-    let file = File.OpenWrite fileStore.fileName
     let (_, encodedBytes) = encodeKV 0 key [||]
-    file.Seek (fileStore.writePosition,  SeekOrigin.Begin) |> ignore
-    file.Write encodedBytes
+    fileStore.writeFileStream.Write encodedBytes
+    fileStore.writeFileStream.Flush true; // TODO: will this be slow? -> yes
     let fileStore = { 
       fileStore with 
         dataMap = Map.remove key fileStore.dataMap;
-        writePosition = file.Position; }
-    file.Close ()
+        writePosition = fileStore.writeFileStream.Position; }
     fileStore
+
+  let keys (fileStore: FileStore) =
+    fileStore.dataMap |> Map.keys 
+
+  let fold folder state (fileStore: FileStore) =
+    fileStore.dataMap 
+    |> Map.fold (fun state key (dataLength, dataPosition: int64) ->
+        (dataLength, dataPosition)
+        |> getValueFromFile fileStore  
+        |> folder state key) 
+      state
+
+  let print (fileStore: FileStore) =
+    fileStore
+    |> fold (fun () key value -> printfn "Key: %s Value: %s" key value; ()) ()
+    |> ignore
+

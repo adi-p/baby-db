@@ -1,4 +1,4 @@
-﻿open System
+open System
 
 let testMemStore store =
     printfn "Testing MemStore"
@@ -58,7 +58,10 @@ let testFileStore store =
            fun (fileStore: FileStore.FileStore) ->
                (fileStore |> FileStore.set "a" "a-replace" |> FileStore.get "a") = (Some "a-replace"))
           ("Should remove 'a'",
-           fun (fileStore: FileStore.FileStore) -> (fileStore |> FileStore.delete "a" |> FileStore.get "a") = None) 
+           fun (fileStore: FileStore.FileStore) -> (fileStore |> FileStore.delete "a" |> FileStore.get "a") = None)
+          ("Should add 'f' and read other keys properly",
+           fun (fileStore: FileStore.FileStore) ->
+               (fileStore |> FileStore.set "f" "f" |> FileStore.get "b") = (Some "bb"))
         ]
 
     let pass =
@@ -75,6 +78,7 @@ let testFileStore store =
     else
         printfn "Not all tests pass"
 
+    FileStore.close store; // this feels akward
 
 let testFileStoreLoad store =
     printfn "Testing FileStore"
@@ -83,7 +87,7 @@ let testFileStoreLoad store =
         [ ("Should not have 'a'", (fun (fileStore: FileStore.FileStore) -> (fileStore |> FileStore.get "a") = None))
           ("Should have 'c'", (fun (fileStore: FileStore.FileStore) -> (fileStore |> FileStore.get "c") = (Some "ccc")))
           ("Should have 'd'", (fun (fileStore: FileStore.FileStore) -> (fileStore |> FileStore.get "d") = (Some "dd")))
-          ("Should not have 'f'", (fun (fileStore: FileStore.FileStore) -> (fileStore |> FileStore.get "f") = None))
+          ("Should not have 'g'", (fun (fileStore: FileStore.FileStore) -> (fileStore |> FileStore.get "g") = None))
           ("Should still not have 'a'",
            fun (fileStore: FileStore.FileStore) -> (fileStore |> FileStore.get "a") = None)
           ("Should replace 'a'",
@@ -106,6 +110,8 @@ let testFileStoreLoad store =
         printfn "All tests pass"
     else
         printfn "Not all tests pass"
+
+    FileStore.close store; // this feels akward
 
 
 // let largeTest n fileStore =
