@@ -57,6 +57,8 @@ module FileStore
     }
 
   let close (fileStore: FileStore) =
+    if fileStore.writeFileStream.CanWrite then
+      fileStore.writeFileStream.Flush true
     fileStore.readFileStream.Close ()
     fileStore.writeFileStream.Close ()
 
@@ -86,8 +88,8 @@ module FileStore
             | _ -> fileStore.dataMap |> Map.add key (writeSize, fileStore.writePosition)); 
           writePosition = fileStore.writeFileStream.Position;
         }
-      // printfn ("Length: %d  WritePositon: %d  WriteSize: %d") file.Length file.Position writeSize
-      match fileStore.writeFileStream.Length <= fileStore.writeFileStream.Position + int64(writeSize) with
+      // printfn ("Length: %d  WritePositon: %d  WriteSize: %d") fileStore.writeFileStream.Length fileStore.writeFileStream.Position writeSize
+      match fileStore.writeFileStream.Length <= fileStore.writeFileStream.Position with
       | true -> newFileStore
       | false -> fillDataMap newFileStore
 
@@ -95,13 +97,13 @@ module FileStore
       dataMap = Map.empty; 
       fileName = fileName; 
       writePosition = 0; 
-      writeFileStream = File.Open (fileName, FileMode.Open, FileAccess.ReadWrite, FileShare.Read); // TODO maybe this needs to be set to the correct position at some point
+      writeFileStream = File.Open (fileName, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
       readFileStream = File.Open (fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
     } |> fillDataMap
   
   //TODO: in theory your value could be any type - but only string for now
   let set (key: string) (value : string) (fileStore: FileStore) =
-    // open file, encode KV pair, write to file, close file, update dataMap, update writePosition
+    // encode KV pair, write to file, update dataMap, update writePosition
     let (bytesLength, encodedBytes) = encodeKV 0 key (value |> System.Text.Encoding.ASCII.GetBytes)
     fileStore.writeFileStream.Write encodedBytes
     // fileStore.writeFileStream.Flush true; // TODO: will this be slow? -> yes
@@ -112,7 +114,8 @@ module FileStore
       }
     fileStore
 
-  let getValueFromFile (fileStore : FileStore) (dataLength, dataPosition: int64) =
+  // NOTE: this function assumes that everything has been flushed to file
+  let readFromFile (fileStore : FileStore) (dataLength, dataPosition: int64) =
       fileStore.readFileStream.Seek (dataPosition,  SeekOrigin.Begin) |> ignore
       let buffer = dataLength |> Array.zeroCreate<byte>
       fileStore.readFileStream.ReadExactly buffer
@@ -120,15 +123,14 @@ module FileStore
       value
 
   let get (key: string) (fileStore: FileStore) =
-    // Find key in dataMap, open file, fetch data, close file, decode data, return
+    // Find key in dataMap, open file, fetch data, decode data, return
     fileStore.writeFileStream.Flush true;
     fileStore.dataMap
     |> Map.tryFind key
-    |> Option.map (getValueFromFile fileStore)
+    |> Option.map (readFromFile fileStore)
     
 
   let delete (key: string) (fileStore: FileStore) =
-    // Just a modified copy of set for now - see if we can merge functionality
     let (_, encodedBytes) = encodeKV 0 key [||]
     fileStore.writeFileStream.Write encodedBytes
     fileStore.writeFileStream.Flush true; // TODO: will this be slow? -> yes
@@ -142,10 +144,11 @@ module FileStore
     fileStore.dataMap |> Map.keys 
 
   let fold folder state (fileStore: FileStore) =
+    fileStore.writeFileStream.Flush true;
     fileStore.dataMap 
     |> Map.fold (fun state key (dataLength, dataPosition: int64) ->
         (dataLength, dataPosition)
-        |> getValueFromFile fileStore  
+        |> readFromFile fileStore  
         |> folder state key) 
       state
 
@@ -195,6 +198,7 @@ module FileStore
       if load then
         writeFileStream <- File.Open (fileName, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
         readFileStream <- File.Open (fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        // TODO: LOAD!
       else
         writeFileStream <- File.Open (fileName, FileMode.Create, FileAccess.ReadWrite, FileShare.Read)
         readFileStream <- File.Open (fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
@@ -222,6 +226,14 @@ module FileStore
     member this.Keys  = dataMap |> Map.keys
 
     member this.Fold folder state = 
+      writeFileStream.Flush true;
       dataMap |> Map.fold (fun state key (dataLength, dataPosition: int64) -> readFromFile (dataLength, dataPosition) |> folder state key) state
 
     member this.Print = this.Fold (fun _ key value -> printfn "Key: %s Value: %s" key value; ()) ()  |> ignore
+
+    // TODO: is there a destructor I can use?
+    member this.Close =
+      if writeFileStream.CanWrite then
+        writeFileStream.Flush true
+      writeFileStream.Close ()
+      readFileStream.Close ()
