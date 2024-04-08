@@ -1,6 +1,6 @@
 # Baby-db
 
-Baby-db is a key-value store backed by a log structured hash table and file presistence.
+Baby-db is a key-value store backed by a log structured hash table and persisted to disk.
 
 It is based on [CaskDB](https://github.com/avinassh/py-caskdb/) and [Bitcask](https://riak.com/assets/bitcask-intro.pdf)
 
