@@ -7,12 +7,14 @@ open FileStore
 [<TestFixture>]
 type TestClass () =
 
-  let mutable (fileStore : FileStoreOO) = new FileStoreOO("testDB", false)
+  let file = "testDB" 
+
+  let mutable (fileStore : FileStoreOO) = new FileStoreOO(file, false)
 
   [<SetUp>]
   member this.SetUpFileStore() = 
     fileStore.Close // TODO: This feels kinda silly
-    fileStore <- new FileStoreOO("testDB", false)
+    fileStore <- new FileStoreOO(file, false)
 
   [<TearDown>]
   member this.CloseFileStore() =
@@ -99,4 +101,69 @@ type TestClass () =
     fileStore.Set key value2
     Assert.That(fileStore.Get key, Is.EqualTo(Some value2))
 
-// TODO: test load filestore
+  [<Test>]
+  member this.TestLoadPersisted() =
+    let (key1, value1) = ("key1", "value1")
+    let (key2, value2) = ("key2", "value2")
+    let (key3, value3) = ("key3", "value3")
+    let (key4, value4) = ("key4", "value4")
+    fileStore.Set key1 value1
+    fileStore.Set key2 value2
+    fileStore.Set key3 value3
+    fileStore.Set key4 value4
+
+    Assert.That(fileStore.Get key1, Is.EqualTo(Some value1))
+    Assert.That(fileStore.Get key2, Is.EqualTo(Some value2))
+    Assert.That(fileStore.Get key3, Is.EqualTo(Some value3))
+    Assert.That(fileStore.Get key4, Is.EqualTo(Some value4))
+    fileStore.Close
+
+    fileStore <- new FileStoreOO(file, true)
+    Assert.That(fileStore.Get key1, Is.EqualTo(Some value1))
+    Assert.That(fileStore.Get key2, Is.EqualTo(Some value2))
+    Assert.That(fileStore.Get key3, Is.EqualTo(Some value3))
+    Assert.That(fileStore.Get key4, Is.EqualTo(Some value4))
+
+  [<Test>]
+  member this.TestDeleteLoadPersisted() =
+    let (key1, value1) = ("key1", "value1")
+    let (key2, value2) = ("key2", "value2")
+    fileStore.Set key1 value1
+    fileStore.Set key2 value2
+    fileStore.Delete key2
+
+
+    Assert.That(fileStore.Get key1, Is.EqualTo(Some value1))
+    Assert.That(fileStore.Get key2, Is.EqualTo(None))
+    fileStore.Close
+
+    fileStore <- new FileStoreOO(file, true)
+    Assert.That(fileStore.Get key1, Is.EqualTo(Some value1))
+    Assert.That(fileStore.Get key2, Is.EqualTo(None))
+
+  [<Test>]
+  member this.TestLoadSetPersisted() =
+    let (key1, value1) = ("key1", "value1")
+    let (key2, value2) = ("key2", "value2")
+    fileStore.Set key1 value1
+    fileStore.Set key2 value2
+
+
+    Assert.That(fileStore.Get key1, Is.EqualTo(Some value1))
+    Assert.That(fileStore.Get key2, Is.EqualTo(Some value2))
+
+    fileStore.Close
+
+    fileStore <- new FileStoreOO(file, true)
+    let newValue = "newValue"
+    Assert.That(fileStore.Get key1, Is.EqualTo(Some value1))
+    Assert.That(fileStore.Get key2, Is.EqualTo(Some value2))
+
+    fileStore.Set key2 newValue
+    Assert.That(fileStore.Get key2, Is.EqualTo(Some newValue))
+
+    fileStore.Close
+
+    fileStore <- new FileStoreOO(file, true)
+    Assert.That(fileStore.Get key1, Is.EqualTo(Some value1))
+    Assert.That(fileStore.Get key2, Is.EqualTo(Some newValue))

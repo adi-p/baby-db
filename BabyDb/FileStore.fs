@@ -167,6 +167,7 @@ module FileStore
     let mutable readFileStream : FileStream = null
 
     let rec fillDataMap () =
+      let startingWritePosition = writeFileStream.Position
       let headerBuffer = HEADER_SIZE |> Array.zeroCreate<byte> // can this be moved above function def?
       writeFileStream.ReadExactly headerBuffer
       let keySize = headerBuffer[0..3] |> BitConverter.ToInt32
@@ -179,11 +180,10 @@ module FileStore
       // remove if there is a tombstone
       match valueSize with 
       | 0 ->  dataMap <- dataMap |> Map.remove key;
-      | _ ->  dataMap <- dataMap |> Map.add key (writeSize, writeFileStream.Position); 
-
+      | _ ->  dataMap <- dataMap |> Map.add key (writeSize, startingWritePosition); 
+      
       writeFileStream.Seek (valueSize, SeekOrigin.Current) |> ignore
-
-      match writeFileStream.Length <= writeFileStream.Position + int64(writeSize) with
+      match writeFileStream.Length <= writeFileStream.Position with
       | true -> () 
       | false -> fillDataMap ()
 
@@ -198,7 +198,7 @@ module FileStore
       if load then
         writeFileStream <- File.Open (fileName, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
         readFileStream <- File.Open (fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        // TODO: LOAD!
+        fillDataMap ()
       else
         writeFileStream <- File.Open (fileName, FileMode.Create, FileAccess.ReadWrite, FileShare.Read)
         readFileStream <- File.Open (fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
@@ -220,7 +220,7 @@ module FileStore
     member this.Delete (key: string) = 
       let (_, encodedBytes) = encodeKV 0 key [||]
       writeFileStream.Write encodedBytes
-      // writeFileStream.Flush true;
+      writeFileStream.Flush true;
       dataMap <- dataMap |> Map.remove key
 
     member this.Keys  = dataMap |> Map.keys
