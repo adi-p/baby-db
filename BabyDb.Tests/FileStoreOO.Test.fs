@@ -2,7 +2,7 @@ module BabyDb.FileStoreOO.Tests
 
 open System
 open NUnit.Framework
-open FileStore
+open FileStoreOO
 
 [<TestFixture>]
 type TestClass () =

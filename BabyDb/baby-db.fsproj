@@ -5,6 +5,8 @@
     <RootNamespace>baby_db</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Encode.fs" />
+    <Compile Include="FileStoreOO.fs" />
     <Compile Include="FileStore.fs" />
     <Compile Include="MemStore.fs" />
     <Compile Include="Program.fs" />
