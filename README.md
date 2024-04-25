@@ -12,6 +12,8 @@ Install .NET and F# following https://learn.microsoft.com/en-us/dotnet/fsharp/ge
 
 ## Running
 
+Navigate to the `/BabyDB` folder and run:
+
 `dotnet run`
 
 ## Basic Usage
@@ -43,3 +45,10 @@ store
 |> printfn "%s" // will print 'ERROR - Value not found'
 
 ```
+
+
+## Testing
+
+Navigate to the `/BabyDB.Tests` folder and run:
+
+`dotnet test`
