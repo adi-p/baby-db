@@ -9,12 +9,14 @@ type TestClass () =
 
   let file = "testDB"
 
-  let mutable (fileStore : FileStore) = empty file // TODO: need to find a better way to initialising this
+  let ID = 1
+
+  let mutable (fileStore : FileStore) = empty file ID // TODO: need to find a better way to initialising this
 
   [<SetUp>]
   member this.SetUpFileStore() = 
     close fileStore // TODO: this is silly
-    fileStore <- empty file
+    fileStore <- empty file ID
 
   [<TearDown>]
   member this.CloseFileStore() =
@@ -132,7 +134,7 @@ type TestClass () =
     Assert.That(fileStore |> get key4, Is.EqualTo(Some value4))
     close fileStore
 
-    fileStore <- load file
+    fileStore <- load file ID
     Assert.That(fileStore |> get key1, Is.EqualTo(Some value1))
     Assert.That(fileStore |> get key2, Is.EqualTo(Some value2))
     Assert.That(fileStore |> get key3, Is.EqualTo(Some value3))
@@ -153,7 +155,7 @@ type TestClass () =
     Assert.That(fileStore |> get key2, Is.EqualTo(None))
     close fileStore
 
-    fileStore <- load file
+    fileStore <- load file ID
     Assert.That(fileStore |> get key1, Is.EqualTo(Some value1))
     Assert.That(fileStore |> get key2, Is.EqualTo(None))
 
@@ -171,7 +173,7 @@ type TestClass () =
     Assert.That(fileStore |> get key2, Is.EqualTo(Some value2))
     close fileStore
 
-    fileStore <- load file
+    fileStore <- load file ID
     let newValue = "newValue"
     Assert.That(fileStore |> get key1, Is.EqualTo(Some value1))
     Assert.That(fileStore |> get key2, Is.EqualTo(Some value2))
@@ -180,7 +182,7 @@ type TestClass () =
     Assert.That(fileStore |> get key2, Is.EqualTo(Some newValue))
     close fileStore
 
-    fileStore <- load file
+    fileStore <- load file ID
     Assert.That(fileStore |> get key1, Is.EqualTo(Some value1))
     Assert.That(fileStore |> get key2, Is.EqualTo(Some newValue))
 

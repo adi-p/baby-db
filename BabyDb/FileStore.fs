@@ -17,6 +17,7 @@ module FileStore
   // └───────────────┴──────────────┴────────────────┘
 
   type FileStore = {
+    id: int
     fileName : string
     dataMap : Map<string, int*int64> // a map from key to (byte length, byte offset in file)
     writePosition: int64
@@ -24,9 +25,11 @@ module FileStore
     writeFileStream: FileStream
   }
 
-  let empty fileName = 
+  let empty fileName id = 
     // TODO: check if file already exists?
+    let fileName = sprintf $"{fileName}{id}"
     { 
+      id = id;
       dataMap = Map.empty; 
       fileName = fileName; 
       writePosition = 0;
@@ -40,7 +43,8 @@ module FileStore
     fileStore.readFileStream.Close ()
     fileStore.writeFileStream.Close ()
 
-  let load fileName =
+  let load fileName id =
+    let fileName = sprintf $"{fileName}{id}"
     // Find the current file and create the dataMap and set the writePosition
     // Read first 8 bytes (keySize and valueSize), read Key, skip value, do until end of file
     // TODO: Consider efficienty, recursion vs. for loop or equivalent, file openings/buffers, etc
@@ -72,6 +76,7 @@ module FileStore
       | false -> fillDataMap newFileStore
 
     { 
+      id = id;
       dataMap = Map.empty; 
       fileName = fileName; 
       writePosition = 0; 

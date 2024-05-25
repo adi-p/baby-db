@@ -9,6 +9,10 @@
     <Compile Include="FileStoreOO.fs" />
     <Compile Include="FileStore.fs" />
     <Compile Include="MemStore.fs" />
+    <Compile Include="CaskStore.fs" />
     <Compile Include="Program.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 </Project>

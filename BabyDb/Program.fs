@@ -16,5 +16,24 @@ let main args =
     // largeTest 100000 (FileStore.empty "testDB")
     // |> Option.defaultValue "wrong - Null"
     // |> printfn "%s"
+    let caskStore = CaskStore.empty "caskTest"
+    let caskStore = caskStore |> CaskStore.set "a" "a" |> CaskStore.set "b" "b" |> CaskStore.set "z" "z"
+    caskStore |> CaskStore.print
+
+
+    CaskStore.close caskStore
+    let caskStore = CaskStore.load "caskTest"
+    let caskStore = caskStore |> CaskStore.set "a" "a2" |> CaskStore.set "b" "b2"
+    caskStore |> CaskStore.print
+    CaskStore.close caskStore
+
+    let caskStore = CaskStore.load "caskTest"
+    let caskStore = caskStore |> CaskStore.set "a" "a3" |> CaskStore.delete "z"
+    caskStore |> CaskStore.print
+    CaskStore.close caskStore
+
+    let caskStore = CaskStore.load "caskTest"
+    caskStore |> CaskStore.print
+    CaskStore.close caskStore
     0
 
