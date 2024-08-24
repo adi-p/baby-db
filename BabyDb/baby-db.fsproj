@@ -3,6 +3,10 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>baby_db</RootNamespace>
+    <PackageId>BabyDbAdarvan</PackageId>
+    <Version>0.0.0-1</Version>
+    <Authors>Adarvan Patel</Authors>
+    <Product>babyDb</Product>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Encode.fs" />
@@ -10,6 +14,7 @@
     <Compile Include="FileStore.fs" />
     <Compile Include="MemStore.fs" />
     <Compile Include="CaskStore.fs" />
+    <Compile Include="CaskStoreOO.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>

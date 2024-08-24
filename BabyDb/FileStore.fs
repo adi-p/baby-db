@@ -5,16 +5,12 @@ module FileStore
   open Encode
 
   // FILE FORMATTING
-
-  // IDEAS:
-  // Need to set the format for the KV pair and the header
-  // Cask_db does: 
-  // ┌───────────┬──────────┬────────────┬─────┬───────┐
-  // │ timestamp │ key_size │ value_size │ key │ value │
-  // └───────────┴──────────┴────────────┴─────┴───────┘
-  // ┌───────────────┬──────────────┬────────────────┐
-  // │ timestamp(4B) │ key_size(4B) │ value_size(4B) │
-  // └───────────────┴──────────────┴────────────────┘
+  // ┌──────────┬────────────┬─────┬───────┐
+  // │ key_size │ value_size │ key │ value │
+  // └──────────┴────────────┴─────┴───────┘
+  // ┌──────────────┬────────────────┐
+  // │ key_size(4B) │ value_size(4B) │
+  // └──────────────┴────────────────┘
 
   type FileStore = {
     id: int
@@ -98,7 +94,7 @@ module FileStore
     fileStore
 
   // NOTE: this function assumes that everything has been flushed to file
-  let readFromFile (fileStore : FileStore) (dataLength, dataPosition: int64) =
+  let private readFromFile (fileStore : FileStore) (dataLength, dataPosition: int64) =
       fileStore.readFileStream.Seek (dataPosition,  SeekOrigin.Begin) |> ignore
       let buffer = dataLength |> Array.zeroCreate<byte>
       fileStore.readFileStream.ReadExactly buffer

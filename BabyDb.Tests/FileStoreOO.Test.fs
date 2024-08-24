@@ -7,18 +7,19 @@ open FileStoreOO
 [<TestFixture>]
 type TestClass () =
 
-  let file = "testDB" 
+  let file = "testDB"
+  let ID = 1
 
-  let mutable (fileStore : FileStoreOO) = new FileStoreOO(file, false)
+  let mutable (fileStore : FileStoreOO) = new FileStoreOO(file, ID, false)
 
   [<SetUp>]
   member this.SetUpFileStore() = 
-    fileStore.Close // TODO: This feels kinda silly
-    fileStore <- new FileStoreOO(file, false)
+    fileStore.Close() // TODO: This feels kinda silly
+    fileStore <- new FileStoreOO(file, ID, false)
 
   [<TearDown>]
   member this.CloseFileStore() =
-    fileStore.Close
+    fileStore.Close()
 
 
   [<Test>]
@@ -116,9 +117,9 @@ type TestClass () =
     Assert.That(fileStore.Get key2, Is.EqualTo(Some value2))
     Assert.That(fileStore.Get key3, Is.EqualTo(Some value3))
     Assert.That(fileStore.Get key4, Is.EqualTo(Some value4))
-    fileStore.Close
+    fileStore.Close()
 
-    fileStore <- new FileStoreOO(file, true)
+    fileStore <- new FileStoreOO(file, ID, true)
     Assert.That(fileStore.Get key1, Is.EqualTo(Some value1))
     Assert.That(fileStore.Get key2, Is.EqualTo(Some value2))
     Assert.That(fileStore.Get key3, Is.EqualTo(Some value3))
@@ -135,9 +136,9 @@ type TestClass () =
 
     Assert.That(fileStore.Get key1, Is.EqualTo(Some value1))
     Assert.That(fileStore.Get key2, Is.EqualTo(None))
-    fileStore.Close
+    fileStore.Close()
 
-    fileStore <- new FileStoreOO(file, true)
+    fileStore <- new FileStoreOO(file, ID, true)
     Assert.That(fileStore.Get key1, Is.EqualTo(Some value1))
     Assert.That(fileStore.Get key2, Is.EqualTo(None))
 
@@ -152,9 +153,9 @@ type TestClass () =
     Assert.That(fileStore.Get key1, Is.EqualTo(Some value1))
     Assert.That(fileStore.Get key2, Is.EqualTo(Some value2))
 
-    fileStore.Close
+    fileStore.Close()
 
-    fileStore <- new FileStoreOO(file, true)
+    fileStore <- new FileStoreOO(file, ID, true)
     let newValue = "newValue"
     Assert.That(fileStore.Get key1, Is.EqualTo(Some value1))
     Assert.That(fileStore.Get key2, Is.EqualTo(Some value2))
@@ -162,8 +163,8 @@ type TestClass () =
     fileStore.Set key2 newValue
     Assert.That(fileStore.Get key2, Is.EqualTo(Some newValue))
 
-    fileStore.Close
+    fileStore.Close()
 
-    fileStore <- new FileStoreOO(file, true)
+    fileStore <- new FileStoreOO(file, ID, true)
     Assert.That(fileStore.Get key1, Is.EqualTo(Some value1))
     Assert.That(fileStore.Get key2, Is.EqualTo(Some newValue))

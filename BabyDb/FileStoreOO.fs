@@ -3,8 +3,10 @@ module FileStoreOO
   open System.IO
   open Encode
   
-  type FileStoreOO(fileName, load) =
-      let fileName = fileName
+  type FileStoreOO(fileName:string, id:int, load:bool) =
+      let id:int = id
+
+      let fileName:string = $"{fileName}{id}"
 
       let mutable dataMap = Map.empty // TODO: assigning to data map seems weird
 
@@ -49,6 +51,8 @@ module FileStoreOO
           writeFileStream <- File.Open (fileName, FileMode.Create, FileAccess.ReadWrite, FileShare.Read)
           readFileStream <- File.Open (fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
       
+      member this.Id = id   
+      
       member this.Set (key: string) (value : string) =
         // encode KV pair, write to file, update dataMap
         let (bytesLength, encodedBytes) = encodeKV 0 key (value |> System.Text.Encoding.ASCII.GetBytes)
@@ -68,17 +72,20 @@ module FileStoreOO
         writeFileStream.Flush true;
         dataMap <- dataMap |> Map.remove key
 
-      member this.Keys  = dataMap |> Map.keys
+      member this.Keys()  = dataMap |> Map.keys
 
       member this.Fold folder state = 
         writeFileStream.Flush true;
         dataMap |> Map.fold (fun state key (dataLength, dataPosition: int64) -> readFromFile (dataLength, dataPosition) |> folder state key) state
 
-      member this.Print = this.Fold (fun _ key value -> printfn "Key: %s Value: %s" key value; ()) ()  |> ignore
+      member this.Print() = this.Fold (fun _ key value -> printfn "Key: %s Value: %s" key value; ()) ()  |> ignore
 
-      // TODO: is there a destructor I can use?
-      member this.Close =
+      member this.Close() =
         if writeFileStream.CanWrite then
             writeFileStream.Flush true
         writeFileStream.Close ()
         readFileStream.Close ()
+
+      interface IDisposable with
+        member this.Dispose() = 
+            this.Close()

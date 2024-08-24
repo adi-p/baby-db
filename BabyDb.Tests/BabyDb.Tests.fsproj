@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="CaskStore.Test.fs" />
+    <Compile Include="CaskStoreOO.Test.fs" />
     <Compile Include="FileStore.Test.fs" />
     <Compile Include="FileStoreOO.Test.fs" />
     <Compile Include="MemStore.Test.fs" />

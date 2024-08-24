@@ -7,6 +7,8 @@ module CaskStore
 
   type FileStoreData = {
     id: int
+    // valueSize: int
+    // valuePosition: int64
     // TODO - in the future this can have data offsets (for the associated filestore)
   }
 
@@ -55,19 +57,25 @@ module CaskStore
         dataMap = dataMap
     }
   
-  let getAllFileStoreNamesAndIds (folderName: string) = 
+  let private getAllFileStoreNamesAndIds (folderName: string) = 
     Directory.GetFiles(folderName, $"{folderName}*")
     |> Array.map (fun fileName ->
       let i = fileName.IndexOfAny("0123456789".ToCharArray())
       (fileName.Substring(0, i), fileName.Substring(i) |> int))
 
-  let getLastFileStoreId (folderName: string) = 
+  let private getLastFileStoreId (folderName: string) = 
     folderName
     |> getAllFileStoreNamesAndIds
     |> Array.map snd // get only ids
     |> Array.max
 
-  let loadExistingFileStores (folderName: string) =
+  let private getFileStoreById (id: int) (caskStore: CaskStore) =
+    if id = caskStore.openFileStore.id then
+      caskStore.openFileStore
+    else 
+      caskStore.allFileStores |> Map.find id
+      
+  let private loadExistingFileStores (folderName: string) =
     folderName
     |> getAllFileStoreNamesAndIds
     |> Array.map (fun (name, id) -> FileStore.load name id)
@@ -88,12 +96,6 @@ module CaskStore
     caskStore |> createHintFile
     caskStore.openFileStore |> FileStore.close
     caskStore.allFileStores |> Map.values |> Seq.iter FileStore.close
-
-  let getFileStoreById (id: int) (caskStore: CaskStore) =
-      if id = caskStore.openFileStore.id then
-        caskStore.openFileStore
-      else 
-        caskStore.allFileStores |> Map.find id
 
   let set (key: string) (value : string) (caskStore: CaskStore) =
     // TODO: when the file gets too big when do we create a new one? here?
