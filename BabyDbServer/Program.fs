@@ -9,6 +9,7 @@ open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.DependencyInjection
 open Giraffe
+open CaskStoreOO
 
 // ---------------------------------
 // Models
@@ -58,7 +59,7 @@ let indexHandler (name : string) =
         
 let webApp =
 
-    let caskStore = CaskStore.empty "webStore" |> CaskStore.set "hello" "success"
+    let caskStore = new CaskStoreOO("ServerCaskStore", false)
 
     choose [
         GET >=>
@@ -73,6 +74,8 @@ let webApp =
                     ])
                 ]
         POST >=> route "/values" >=> warbler (fun _ -> DataService.setValueHandler caskStore)
+        DELETE >=> routef "/values/%s" (fun key -> warbler (fun _ -> DataService.deleteValueHandler caskStore key))
+        
 
         setStatusCode 404 >=> text "Not Found" ]
 

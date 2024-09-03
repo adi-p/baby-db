@@ -1,8 +1,14 @@
 .App {
-  text-align: center;
+  padding: 16px;
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-size: calc(10px + 2vmin);
+  color: white;
 }
 
-.App-logo {
+/* .App-logo {
   height: 40vmin;
   pointer-events: none;
 }
@@ -11,22 +17,22 @@
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
   }
-}
+} */
 
 .App-header {
-  background-color: #282c34;
-  min-height: 100vh;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.App-header h1 {
+  font-size: 16px;
+  margin: 16px 0px;
 }
+
+/* .App-link {
+  color: #61dafb;
+} */
 
 @keyframes App-logo-spin {
   from {
@@ -35,4 +41,93 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* TODO: figure out if scss is possible */
+
+/* Format */
+
+.body-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+/* Buttons */
+
+.primary-button {
+  font-size: 24px;
+  background-color: #DC5F00;
+  color: white;
+  border-radius: 8px;
+  padding: 8px;
+  margin: 8px 0px;
+  /* border: 2px solid white; */
+  border: none;
+}
+
+.primary-button:hover, .primary-button:focus  {
+  background-color: #686D76;
+}
+
+.secondary-button {
+  font-size: 24px;
+  background-color: #373A40;
+  color: white;
+  border-radius: 8px;
+  padding: 8px;
+  margin: 8px 0px;
+  border: none;
+
+}
+
+.secondary-button:hover, .secondary-button:focus  {
+  background-color: #686D76;
+}
+
+
+
+
+/* Forms */
+
+.form-section {
+  /* width: 100%; */
+  border: 1px solid white;
+  padding: 0px 24px 24px;
+  margin: 16px;
+  border-radius: 8px;
+}
+
+
+
+.form-section .button-group {
+  display: flex;
+  flex-direction: column;
+}
+
+
+.fetch-form, .store-form, .delete-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.fetch-form input, .store-form input, .delete-form input {
+  width: 100%;
+}
+
+.fetch-form label, .store-form label, .delete-form label {
+  margin: 4px 0px;
+}
+
+pre.code-block {
+  display: block;
+  text-align: start;
+  background-color: gray;
+  border-radius: 8px;
+  border: 1px solid black;
+  padding: 16px;
 }
