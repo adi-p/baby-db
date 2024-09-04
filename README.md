@@ -10,45 +10,91 @@ Baby-db is written in F#. It is meant as an educational project and is not produ
 
 Install .NET and F# following https://learn.microsoft.com/en-us/dotnet/fsharp/get-started/install-fsharp
 
-## Running
+## Folder Structure
 
-Navigate to the `/BabyDB` folder and run:
+- BabyDb
+- BabyDb.Tests
+- BabyDbServer
+
+### BabyDb
+
+This is the main piece of this project. It is the code for the key-value store.
+
+To run, navigate to the `/BabyDB` folder and run:
 
 `dotnet run`
+
+### BabyDb.Tests
+
+This folder contains the tests for baby-db.
+
+To run the tests, navigate to the `/BabyDB.Tests` folder and run: 
+
+`dotnet test`
+
+### BabyDbServer
+
+This folder contains a small web app that interacts with BabyDb.
+
+It uses F# and Giraffe in the back end, and React in the front end.
+
+To run the back end, navigate to `/BabyDbServer` and use `dotnet run` or `dotnet watch`
+
+For the front end, navigate to `/BabyDbServer/client` and use `npm start`
 
 ## Basic Usage
 
 ```F#
 
-// create a empty filestore called "test_db" and add a kv pair
+// create a empty CaskStore called "test_db" and add a kv pair
 let store =
-  FileStore.empty "test_db"
-  |> FileStore.set "key_1" "value_1"
+  CaskStore.empty "test_db"
+  |> CaskStore.set "key_1" "value_1"
 
 // Try and get value and print
 store
-|> FileStore.get "key_1"
+|> CaskStore.get "key_1"
 |> Option.defaultValue "ERROR - Value not found"
 |> printfn "%s" // will print 'value_1'
 
 store
-|> FileStore.get "key_2"
+|> CaskStore.get "key_2"
 |> Option.defaultValue "ERROR - Value not found"
 |> printfn "%s" // will print 'ERROR - Value not found'
 
 // delete key
-let store = store |> FileStore.delete "key_1"
+let store = store |> CaskStore.delete "key_1"
 
 store
-|> FileStore.get "key_1"
+|> CaskStore.get "key_1"
 |> Option.defaultValue "ERROR - Value not found"
 |> printfn "%s" // will print 'ERROR - Value not found'
 
 ```
 
+Alternatively, using the OO version
 
-## Testing
+```F#
 
-Navigate to the `/BabyDB.Tests` folder and run:
+open CaskStoreOO
 
-`dotnet test`
+let store = new CaskStoreOO("test_db", false)
+store.Set "key_1" "value_1"
+
+// Try and get value and print
+store.Get "key_1"
+|> Option.defaultValue "ERROR - Value not found"
+|> printfn "%s" // will print 'value_1'
+
+store.Get "key_2"
+|> Option.defaultValue "ERROR - Value not found"
+|> printfn "%s" // will print 'ERROR - Value not found'
+
+// delete key
+store.Delete "key_1"
+
+store.Get "key_1"
+|> Option.defaultValue "ERROR - Value not found"
+|> printfn "%s" // will print 'ERROR - Value not found'
+
+```
